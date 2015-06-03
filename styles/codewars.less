@@ -4,6 +4,8 @@
 // for a full listing of what's available.
 @import "ui-variables";
 
+@assets: 'atom://atom-codewars/assets';
+
 .codewars-panel {
   width: ~"calc(95% - 80px)" !important;
   margin-left: ~"calc(-1 * (95% - 80px) / 2)" !important;
@@ -14,6 +16,12 @@
 .codewars {
   width: 100%;
   height: 100%;
+  &.logo {
+    background-image: url("@{assets}/logo-square-red-big.png");
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;   
+  }
   .message {
     padding-top: 0;
   }
@@ -22,5 +30,8 @@
     position: absolute;
     width: 100%;
     height: 100%;
+  }
+  .invisible {
+    visibility: hidden;
   }
 }
