@@ -1,4 +1,5 @@
 {$, View} = require 'space-pen'
+WebViewClient = require './webview/client'
 
 module.exports =
 class CodewarsView extends View
@@ -22,12 +23,12 @@ class CodewarsView extends View
     @parent().addClass('codewars-panel')
     @hide()
     @webview = @find('.dashboard-frame')
-
+    @webviewClient = new WebViewClient(@webview.get(0))
     @webview.one 'did-stop-loading', =>
-      console.log('did-stop-loading')
       @webview.hide()
       @webview.removeClass('invisible')
       @webview.fadeIn(400, => @removeClass('logo'))
+      @webviewClient.execute(-> console.log('hello'))
 
 
   # Returns an object that can be retrieved when package is activated
