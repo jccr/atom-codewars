@@ -16,15 +16,17 @@ class WebViewClient
       # get callback info for this message
       callback = callbacks[data.id]
 
-      # invoke callback
-      callback.cb?()
+      error = data.message?.error
 
-      # handle incoming errors
-      if data.message?.error?.message
+      # mangle error
+      if error
         if DEBUG then @webview.openDevTools()
         error = new Error(data.message.error.message)
         error.stack = callback.fn + '\n' + data.message.error.stack
-        throw error
+
+      # invoke callback
+      callback.cb?(error, data.message?.result)
+
 
   execute: (fn, cb) =>
     id = WebViewClient.id()
