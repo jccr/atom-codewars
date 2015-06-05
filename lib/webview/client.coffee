@@ -33,6 +33,8 @@ class WebViewClient
 
     # wrap function source so it is self executing
     fn = "(#{fn.toString()})()"
+    # replace uses of jquery and lodash with internal symbols
+    fn = fn.replace(/([\$\_])(?=[\(\.\[])/, '_$$$&')
 
     # generate callback info
     callbacks[id] = {fn: fn, cb: cb}
