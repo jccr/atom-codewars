@@ -29,7 +29,7 @@ class CodewarsView extends View
       @webview.removeClass('invisible')
       @webview.fadeIn(400, => @removeClass('logo'))
       @webviewClient.execute(-> console.log('hello'))
-
+      @_injectToWebview()
 
   # Returns an object that can be retrieved when package is activated
   serialize: ->
@@ -49,3 +49,15 @@ class CodewarsView extends View
 
   isVisible: ->
     @panel.isVisible()
+
+  # == PRIVATE FUNCTIONS ==
+
+  _injectToWebview: ->
+
+    interceptHistory = ->
+      _pushState = window.history.pushState
+      window.history.pushState = ->
+        console.log(arguments)
+        _pushState.apply(window.history, arguments)
+
+    @webviewClient.execute(interceptHistory)

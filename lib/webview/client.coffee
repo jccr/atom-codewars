@@ -1,7 +1,8 @@
 DEBUG = true
+{EventEmitter} = require 'events'
 
 module.exports =
-class WebViewClient
+class WebViewClient extends EventEmitter
   id = 0
   callbacks = []
 
@@ -12,6 +13,10 @@ class WebViewClient
 
     @webview.addEventListener 'ipc-message', (event) =>
       data = event.channel
+      
+      if data is 'trigger'
+        @emit data.message.name data.message.data
+        return
 
       # get callback info for this message
       callback = callbacks[data.id]
