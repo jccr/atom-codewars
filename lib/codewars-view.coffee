@@ -9,7 +9,7 @@ class CodewarsView extends View
         @tag 'webview',
           class: 'dashboard-frame invisible',
           src: 'http://www.codewars.com/dashboard',
-          preload: require.resolve('./webview/server')
+          preload: 'file://' + require.resolve('./webview/server')
 
   initialize: (serializedState) ->
     onCancel = (event) =>
