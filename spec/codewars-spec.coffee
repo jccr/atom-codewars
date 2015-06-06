@@ -1,4 +1,5 @@
 Codewars = require '../lib/codewars'
+{$, View} = require 'space-pen'
 
 # Use the command `window:run-package-specs` (cmd-alt-ctrl-p) to run specs.
 #
@@ -10,7 +11,7 @@ describe "Codewars", ->
 
   beforeEach ->
     workspaceElement = atom.views.getView(atom.workspace)
-    activationPromise = atom.packages.activatePackage('codewars')
+    activationPromise = atom.packages.activatePackage('atom-codewars')
 
   describe "when the codewars:toggle event is triggered", ->
     it "hides and shows the modal panel", ->
@@ -31,10 +32,12 @@ describe "Codewars", ->
         codewarsElement = workspaceElement.querySelector('.codewars')
         expect(codewarsElement).toExist()
 
-        codewarsPanel = atom.workspace.panelForItem(codewarsElement)
-        expect(codewarsPanel.isVisible()).toBe true
+        codewarsView = $(codewarsElement).view()
+        expect(codewarsView).toBeInstanceOf(View)
+
+        expect(codewarsView.isVisible()).toBe true
         atom.commands.dispatch workspaceElement, 'codewars:toggle'
-        expect(codewarsPanel.isVisible()).toBe false
+        expect(codewarsView.isVisible()).toBe false
 
     it "hides and shows the view", ->
       # This test shows you an integration test testing at the view level.
@@ -59,4 +62,38 @@ describe "Codewars", ->
         codewarsElement = workspaceElement.querySelector('.codewars')
         expect(codewarsElement).toBeVisible()
         atom.commands.dispatch workspaceElement, 'codewars:toggle'
+        expect(codewarsElement).not.toBeVisible()
+
+    it "hides the view when blurred", ->
+      jasmine.attachToDOM(workspaceElement)
+
+      expect(workspaceElement.querySelector('.codewars')).not.toExist()
+
+      atom.commands.dispatch workspaceElement, 'codewars:toggle'
+
+      waitsForPromise ->
+        activationPromise
+
+      runs ->
+        # Now we can test for view visibility
+        codewarsElement = workspaceElement.querySelector('.codewars')
+        expect(codewarsElement).toBeVisible()
+        $(workspaceElement).triggerHandler('click')
+        expect(codewarsElement).not.toBeVisible()
+
+    it "hides the view when deactivated", ->
+      jasmine.attachToDOM(workspaceElement)
+
+      expect(workspaceElement.querySelector('.codewars')).not.toExist()
+
+      atom.commands.dispatch workspaceElement, 'codewars:toggle'
+
+      waitsForPromise ->
+        activationPromise
+
+      runs ->
+        # Now we can test for view visibility
+        codewarsElement = workspaceElement.querySelector('.codewars')
+        expect(codewarsElement).toBeVisible()
+        atom.commands.dispatch workspaceElement, 'core:cancel'
         expect(codewarsElement).not.toBeVisible()
