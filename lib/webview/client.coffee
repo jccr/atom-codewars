@@ -2,39 +2,45 @@ DEBUG = true
 {EventEmitter} = require 'events'
 
 module.exports =
-class WebViewClient extends EventEmitter
+class WebviewClient extends EventEmitter
   id = 0
   callbacks = []
 
   @id: -> ++id
 
   constructor: (@webview) ->
-    window.WebViewClient1 = @
+    window.client1 = @
 
-    @webview.addEventListener 'ipc-message', (event) =>
-      data = event.channel
-      
-      if data is 'trigger'
-        @emit data.message.name data.message.data
-        return
+    @webview.addEventListener 'ipc-message', @_messageHandler
 
-      # get callback info for this message
-      callback = callbacks[data.id]
+  _messageHandler: (event) =>
+    channel = event.channel
 
-      error = data.message?.error
+    # get callback info for this message
+    callback = callbacks[channel.id]
 
-      # mangle error
-      if error
-        if DEBUG then @webview.openDevTools()
-        error = new Error(data.message.error.message)
-        error.stack = callback.fn + '\n' + data.message.error.stack
+    switch channel.type
+      when 'emit'
+        channelData = channel.data
+        channelData.data.unshift(channelData.type)
+        eventToEmit = channelData.data
+        @emit.apply @, eventToEmit
 
-      # invoke callback
-      callback.cb?(error, data.message?.result)
+      when 'execute'
+        error = channel.data?.error
+
+        # mangle error
+        if error
+          if DEBUG then @webview.openDevTools()
+          error = new Error(channel.data.error.message)
+          error.stack = callback.fn + '\n' + channel.data.error.stack
+
+        # invoke callback
+        callback.cb?(error, channel.data?.result)
 
 
   execute: (fn, cb) =>
-    id = WebViewClient.id()
+    id = WebviewClient.id()
 
     # wrap function source so it is self executing
     fn = "(#{fn.toString()})()"

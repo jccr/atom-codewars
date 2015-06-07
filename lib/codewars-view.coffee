@@ -1,5 +1,5 @@
 {$, View} = require 'space-pen'
-WebViewClient = require './webview/client'
+WebviewClient = require './webview/client'
 
 module.exports =
 class CodewarsView extends View
@@ -23,17 +23,14 @@ class CodewarsView extends View
     @parent().addClass('codewars-panel')
     @hide()
     @webview = @find('.dashboard-frame')
-    @webviewClient = new WebViewClient(@webview.get(0))
-    @webview.one 'did-stop-loading', =>
-      @webview.hide()
-      @webview.removeClass('invisible')
-      @webview.fadeIn(400, => @removeClass('logo'))
-      @webviewClient.execute(-> console.log('hello'))
-      @_injectToWebview()
+    @client = new WebviewClient(@webview.get(0))
+
+    # Bind events
+    @webview.one 'did-stop-loading', @_onReady
+    @client.on 'interceptNavigation', @_onNavigation
 
   # Returns an object that can be retrieved when package is activated
   serialize: ->
-
 
   # Tear down any state and detach
   destroy: ->
@@ -50,14 +47,26 @@ class CodewarsView extends View
   isVisible: ->
     @panel.isVisible()
 
-  # == PRIVATE FUNCTIONS ==
+  # == Event handlers == #
+  _onReady: =>
+    @_fadeOutWebView()
+    @_injectToWebview()
+    @client.execute(-> console.log('hello'))
+
+  _onNavigation: (url) =>
+    console.log('navigation', url)
+
+  # == Private functions == #
+  _fadeOutWebView: ->
+    @webview.hide()
+    @webview.removeClass('invisible')
+    @webview.fadeIn(400, => @removeClass('logo'))
 
   _injectToWebview: ->
+    interceptNavigation = ->
+      _replaceState = history.replaceState
+      history.replaceState = ->
+        $wh.emit('interceptNavigation', arguments[2])
+        _replaceState.apply(history, arguments)
 
-    interceptHistory = ->
-      _pushState = window.history.pushState
-      window.history.pushState = ->
-        console.log(arguments)
-        _pushState.apply(window.history, arguments)
-
-    @webviewClient.execute(interceptHistory)
+    @client.execute(interceptNavigation)
