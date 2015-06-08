@@ -1,6 +1,6 @@
 {
   "name": "atom-codewars",
-  "main": "./lib/codewars",
+  "main": "./lib/main",
   "version": "0.0.0",
   "description": "A short description of your package",
   "keywords": [
@@ -16,6 +16,7 @@
   "dependencies": {
     "atom-space-pen-views": "^2.0.0",
     "space-pen": "^5.0.0",
+    "event-kit": "^1.2.0",
     "jquery": "latest",
     "lodash": "latest"
   }

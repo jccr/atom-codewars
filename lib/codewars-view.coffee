@@ -1,5 +1,6 @@
 {$, View} = require 'space-pen'
-WebviewClient = require './webview/client'
+CodewarsController = require './codewars-controller'
+{CompositeDisposable} = require 'event-kit'
 
 module.exports =
 class CodewarsView extends View
@@ -12,6 +13,8 @@ class CodewarsView extends View
           preload: 'file://' + require.resolve('./webview/server')
 
   initialize: (serializedState) ->
+    @subscriptions = new CompositeDisposable
+
     onCancel = (event) =>
       @hide()
       event.stopPropagation()
@@ -22,18 +25,20 @@ class CodewarsView extends View
     @panel ?= atom.workspace.addModalPanel(item: @)
     @parent().addClass('codewars-panel')
     @hide()
-    @webview = @find('.dashboard-frame')
-    @client = new WebviewClient(@webview.get(0))
 
-    # Bind events
-    @webview.one 'did-stop-loading', @_onReady
-    @client.on 'interceptNavigation', @_onNavigation
+    @webview = @find('.dashboard-frame')
+    @controller = new CodewarsController(@webview)
+
+    @_bindEventHandlers()
 
   # Returns an object that can be retrieved when package is activated
   serialize: ->
 
+
   # Tear down any state and detach
   destroy: ->
+    @subscriptions.dispose()
+    @controller.destroy()
     @panel.destroy()
     @remove()
 
@@ -48,12 +53,15 @@ class CodewarsView extends View
     @panel.isVisible()
 
   # == Event handlers == #
-  _onReady: =>
-    @_fadeOutWebView()
-    @_injectToWebview()
-    @client.execute(-> console.log('hello'))
+  _bindEventHandlers: ->
+    @subscriptions.add @controller.onDidLoad @_onDidLoad
+    @subscriptions.add @controller.onDidNavigate @_onDidNavigate
 
-  _onNavigation: (url) =>
+  _onDidLoad: =>
+    @_fadeOutWebView()
+    @controller.execute(-> console.log('hello'))
+
+  _onDidNavigate: (url) =>
     console.log('navigation', url)
 
   # == Private functions == #
@@ -61,12 +69,3 @@ class CodewarsView extends View
     @webview.hide()
     @webview.removeClass('invisible')
     @webview.fadeIn(400, => @removeClass('logo'))
-
-  _injectToWebview: ->
-    interceptNavigation = ->
-      _replaceState = history.replaceState
-      history.replaceState = ->
-        $wh.emit('interceptNavigation', arguments[2])
-        _replaceState.apply(history, arguments)
-
-    @client.execute(interceptNavigation)
