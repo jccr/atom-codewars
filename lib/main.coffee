@@ -1,5 +1,5 @@
-CodewarsView = require './codewars-view'
 {CompositeDisposable} = require 'atom'
+CodewarsView = require './codewars-view'
 
 module.exports = Codewars =
   codewarsView: null

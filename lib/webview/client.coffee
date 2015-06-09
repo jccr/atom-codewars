@@ -42,7 +42,7 @@ class WebviewClient
         # invoke callback
         callback.cb?(error, channel.data?.result)
 
-  execute: (fn, cb) =>
+  execute: (fn, cb, args...) =>
     id = WebviewClient.id()
 
     # wrap function source so it is self executing

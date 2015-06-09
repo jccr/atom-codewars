@@ -1,6 +1,6 @@
 {$, View} = require 'space-pen'
-CodewarsController = require './codewars-controller'
 {CompositeDisposable} = require 'event-kit'
+CodewarsController = require './codewars-controller'
 
 module.exports =
 class CodewarsView extends View
@@ -55,7 +55,7 @@ class CodewarsView extends View
   # == Event handlers == #
   _bindEventHandlers: ->
     @subscriptions.add @controller.onDidLoad @_onDidLoad
-    @subscriptions.add @controller.onDidNavigate @_onDidNavigate
+    @subscriptions.add @controller.onWillOpenChallenge @_onDidNavigate
 
   _onDidLoad: =>
     @_fadeOutWebView()
