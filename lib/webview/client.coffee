@@ -10,7 +10,6 @@ class WebviewClient
 
   constructor: (@webviewElement) ->
     @emitter = new Emitter
-    window.client1 = @
 
     @webviewElement.addEventListener 'ipc-message', @_messageHandler
 
@@ -42,6 +41,9 @@ class WebviewClient
         # invoke callback
         callback.cb? error, channel.data?.result
 
+  _encodeObject: (obj) =>
+    return JSON.stringify obj
+
   execute: (fn, cb, args...) =>
     id = WebviewClient.id()
 
@@ -51,6 +53,9 @@ class WebviewClient
     fn = fn.replace /([\$\_\@])(?=[\(\.\[])/, '_$$$&'
     # replace @emitter with _$emitter
     fn = fn.replace /this\.(emitter[.\[])/, '_$$$1'
+    # replace variable placeholders with args
+    matchIndex = 0
+    fn = fn.replace /\$\d+[^\W_\$]?/, => @_encodeObject args[matchIndex++]
 
     # generate callback info
     callbacks[id] = {fn: fn, cb: cb}

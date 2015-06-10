@@ -6,6 +6,7 @@ module.exports = Codewars =
   subscriptions: null
 
   activate: (state) ->
+    window.codewars = @
     @codewarsView = new CodewarsView(state.codewarsViewState)
 
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable

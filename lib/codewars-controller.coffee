@@ -31,22 +31,34 @@ class CodewarsController extends WebviewClient
   onDidSolveChallenge: (callback) ->
     @emitter.on 'did-solve-challenge', callback
 
+  getChallengeInfo: (callback) ->
+    @execute (-> App.data), callback  
+
   getCode: (callback) ->
     @execute (-> App.controller.editor?.editor.getValue()), callback
 
   setCode: (code, callback) ->
     @execute (-> App.controller.editor?.editor.setValue($0)), callback, code
 
+  getTest: (callback) ->
+    @execute (-> App.controller.fixture?.editor.getValue()), callback
+
+  setTest: (code, callback) ->
+    @execute (-> App.controller.fixture?.editor.setValue($0)), callback, code
 
   # == Event handlers == #
 
   _bindEventHandlers: ->
     @webview.one 'did-stop-loading', @_onDidLoad
     @subscriptions.add @onDidNavigate @_onDidNavigate
+    @subscriptions.add @onDidOpenChallenge @_onDidOpenChallenge
+
+  _onDidOpenChallenge: =>
+    @execute $detectDidGetOutput
 
   _onDidLoad: =>
     @emitter.emit 'did-load'
-    @_injectForeignFunctions()
+    @execute $interceptNavigation
 
   _onDidNavigate: (url) =>
     idWhenOpened = (url.match /\/kata\/(.*?)\/train\/(.*?)$/)?[1]
@@ -94,8 +106,9 @@ class CodewarsController extends WebviewClient
     if App.loaded then didLoad()
     else App.afterLoad didLoad
 
-
-  # == Private functions == #
-
-  _injectForeignFunctions: ->
-    @execute $interceptNavigation
+  $detectDidGetOutput = ->
+    outputPanel = App.controller.outputPanel
+    _setOutput = outputPanel.setOutput;
+    outputPanel.setOutput = ->
+      @emitter.emit 'did-get-output' arguments
+      _setOutput.apply outputPanel, arguments
