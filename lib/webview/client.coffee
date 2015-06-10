@@ -26,7 +26,7 @@ class WebviewClient
     switch channel.type
       when 'emit'
         channelData = channel.data
-        channelData.data.unshift(channelData.type)
+        channelData.data.unshift channelData.type
         eventToEmit = channelData.data
         @emitter.emit.apply @emitter, eventToEmit
 
@@ -36,11 +36,11 @@ class WebviewClient
         # mangle error
         if error
           if DEBUG then @webviewElement.openDevTools()
-          error = new Error(channel.data.error.message)
+          error = new Error channel.data.error.message
           error.stack = callback.fn + '\n' + channel.data.error.stack
 
         # invoke callback
-        callback.cb?(error, channel.data?.result)
+        callback.cb? error, channel.data?.result
 
   execute: (fn, cb, args...) =>
     id = WebviewClient.id()
@@ -48,11 +48,11 @@ class WebviewClient
     # wrap function source so it is self executing
     fn = "(#{fn.toString()})()"
     # replace uses of jquery and lodash with internal symbols
-    fn = fn.replace(/([\$\_\@])(?=[\(\.\[])/, '_$$$&')
+    fn = fn.replace /([\$\_\@])(?=[\(\.\[])/, '_$$$&'
     # replace @emitter with _$emitter
-    fn = fn.replace(/this\.(emitter[.\[])/, '_$$$1')
+    fn = fn.replace /this\.(emitter[.\[])/, '_$$$1'
 
     # generate callback info
     callbacks[id] = {fn: fn, cb: cb}
 
-    @webviewElement.send('execute', id, fn)
+    @webviewElement.send 'execute', id, fn

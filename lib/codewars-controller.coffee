@@ -5,7 +5,7 @@ module.exports =
 class CodewarsController extends WebviewClient
 
   constructor: (@webview) ->
-    super @webview.get(0)
+    super @webview.get 0
     @subscriptions = new CompositeDisposable
     @_bindEventHandlers()
 
@@ -49,8 +49,8 @@ class CodewarsController extends WebviewClient
     @_injectForeignFunctions()
 
   _onDidNavigate: (url) =>
-    idWhenOpened = url.match(/\/kata\/(.*?)\/train\/(.*?)$/)?[1]
-    idWhenSolved = url.match(/\/kata\/(.*?)\/solutions\/(.*?)$/)?[1]
+    idWhenOpened = (url.match /\/kata\/(.*?)\/train\/(.*?)$/)?[1]
+    idWhenSolved = (url.match /\/kata\/(.*?)\/solutions\/(.*?)$/)?[1]
 
     if idWhenOpened
       @emitter.emit 'will-open-challenge', idWhenOpened
@@ -76,13 +76,13 @@ class CodewarsController extends WebviewClient
     history.replaceState = ->
       url = arguments[2]
       if url then @emitter.emit 'did-navigate', url
-      _replaceState.apply(history, arguments)
+      _replaceState.apply history, arguments
 
   $detectAfterLoad = ->
     didLoad = ->
       if App.controller.editor then didLoadCompletely() else
         observer = (changes) ->
-          return unless _.findWhere(changes, {name: 'editor'})
+          return unless _.findWhere changes, {name: 'editor'}
           didLoadCompletely()
           Object.unobserve App.controller, observer
 
