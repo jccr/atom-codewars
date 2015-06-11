@@ -1,3 +1,4 @@
+
 {$, View} = require 'space-pen'
 {CompositeDisposable} = require 'event-kit'
 CodewarsController = require './codewars-controller'
@@ -12,7 +13,7 @@ class CodewarsView extends View
           src: 'http://www.codewars.com/dashboard',
           preload: 'file://' + require.resolve('./webview/server')
 
-  initialize: (serializedState) ->
+  initialize: (@path, serializedState) ->
     @subscriptions = new CompositeDisposable
 
     onCancel = (event) =>
@@ -52,17 +53,35 @@ class CodewarsView extends View
   isVisible: ->
     @panel.isVisible()
 
+  isPlayingChallenge: false
+
+  tearDownChallenge: (id) ->
+    @isPlayingChallenge = false
+
+  setupChallenge: (id) ->
+    @isPlayingChallenge = true
+
+
   # == Event handlers == #
   _bindEventHandlers: ->
     @subscriptions.add @controller.onDidLoad @_onDidLoad
-    @subscriptions.add @controller.onWillOpenChallenge @_onDidNavigate
+    @subscriptions.add @controller.onWillOpenChallenge @_onWillOpenChallenge
+    @subscriptions.add @controller.onDidSolveChallenge @_onDidSolveChallenge
 
   _onDidLoad: =>
     @_fadeOutWebView()
-    @controller.execute(-> console.log('hello'))
+    @controller.execute(-> console.log('test console output'))
 
-  _onDidNavigate: (url) =>
-    console.log('navigation', url)
+  _onDidSolveChallenge: (id) =>
+    console.log('solved challenge', id)
+    @tearDownChallenge(id)
+    @show()
+
+  _onWillOpenChallenge: (id) =>
+    console.log('opening challenge', id)
+    @hide()
+    @setupChallenge(id)
+
 
   # == Private functions == #
   _fadeOutWebView: ->

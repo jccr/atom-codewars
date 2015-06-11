@@ -31,8 +31,20 @@ class CodewarsController extends WebviewClient
   onDidSolveChallenge: (callback) ->
     @emitter.on 'did-solve-challenge', callback
 
+  validateTest: ->
+    @execute (-> App.controller.validate())
+
+  submitCode: ->
+    @execute (-> App.controller.attempt())
+
+  finalizeCode: ->
+    @execute (-> App.controller.submit())
+
   getChallengeInfo: (callback) ->
-    @execute (-> App.data), callback  
+    @execute (-> App.data), callback
+
+  getInstructions: (callback) ->
+    @execute (-> App.controller.markdownDisplay.markdown), callback
 
   getCode: (callback) ->
     @execute (-> App.controller.editor?.editor.getValue()), callback
@@ -110,5 +122,5 @@ class CodewarsController extends WebviewClient
     outputPanel = App.controller.outputPanel
     _setOutput = outputPanel.setOutput;
     outputPanel.setOutput = ->
-      @emitter.emit 'did-get-output' arguments
+      @emitter.emit 'did-get-output', arguments
       _setOutput.apply outputPanel, arguments
