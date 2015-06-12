@@ -6,43 +6,53 @@ Q = require 'q'
 {CompositeDisposable} = require 'atom'
 CodewarsView = require './codewars-view'
 
+DATA_DIR = 'codewars-workspace'
+OPEN_FILE_KEY = DATA_DIR + '-loading'
+
 module.exports = Codewars =
-  dataDir: 'codewars-workspace'
-  codewarsView: null
   subscriptions: null
-  openNewWindow: false
-  windowWasOpened: false
-
-  checkWindowLock: (callback) ->
-    writeLockFile = (cb) =>
-      fs.writeFile @windowLockPath, atom.getCurrentWindow().id, cb
-
-    fs.readFile @windowLockPath, (err, data) =>
-      if err or atom.getCurrentWindow().id is 1
-        @clearWindowLock =>
-          writeLockFile (err) =>
-            throw err if err
-            @openNewWindow = true
-            callback false
-      else if (parseInt data.toString()) < atom.getCurrentWindow().id
-        writeLockFile (err) ->
-          throw err if err
-          callback true
-      else
-        callback false
-
-  clearWindowLock: (callback) ->
-    fs.unlink @windowLockPath, callback
+  codewarsView: null
+  path: null
+  pathStatesDir: null
+  pathWindowState: null
+  pathFocusState: null
+  firstWindowAtLaunch: false
 
   activate: (state) ->
-    @path = path.join atom.getConfigDirPath(), @dataDir
-    @windowLockPath = path.join @path, 'window.lock'
+    window.codewars = @
+    @state = state
+    @path = path.join atom.getConfigDirPath(), DATA_DIR
+    @pathStatesDir = path.join @path, '.states'
+    @pathWindowState = path.join @pathStatesDir, 'window'
+    @pathFocusState = path.join @pathStatesDir, 'focus'
 
-    mkdirp @path, (err) =>
-      throw err if err
-      @checkWindowLock (activate) =>
-        return unless activate
+    if state.isCodewarsWindow
+      @_clearWindowState ->
+        atom.close()
+      return
+
+    if atom.getCurrentWindow().id is 1
+      @firstWindowAtLaunch = true
+      fs.access @pathWindowState, (err) =>
+        if err then @firstWindowAtLaunch = false
+
+    checkIfCodewarsWindow = (textEditorFile) =>
+      if (path.basename textEditorFile) is OPEN_FILE_KEY
+        @_writeWindowState()
+        # Actually create the view now
         @createView state
+
+    mkdirp @pathStatesDir, (err) =>
+      throw err if err
+      # Check if the window has the codewars initial file open
+      textEditorFile = atom.workspace.getActiveTextEditor()?.buffer.file?.path
+      if textEditorFile
+        checkIfCodewarsWindow textEditorFile
+      else
+        @_textEditorObserver =
+          atom.workspace.observeTextEditors (editor) =>
+            checkIfCodewarsWindow editor?.buffer.file?.path
+            @_textEditorObserver?.dispose()
 
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
@@ -51,34 +61,56 @@ module.exports = Codewars =
     @subscriptions.add atom.commands.add 'atom-workspace', 'codewars:toggle': => @toggle()
 
   createView: (state) ->
-    window.codewars = @
     @codewarsView = new CodewarsView @path, state.codewarsViewState
     @codewarsView.show()
+    @_watchStateFiles()
 
   deactivate: ->
-    @clearWindowLock()
+    @_pathStatesWatcher?.close()
+    @_clearWindowState()
     @subscriptions?.dispose()
     @codewarsView?.destroy()
 
   serialize: ->
-    codewarsViewState: @codewarsView.serialize()
+    isCodewarsWindow: !!@codewarsView
+    codewarsViewState: @codewarsView?.serialize()
 
   toggle: ->
-    if @windowWasOpened
-      @checkWindowLock (activate) =>
-        if @openNewWindow
-          @windowWasOpened = false
-          @toggle()
-        else atom.notifications.addInfo "Codewars is already open in another window."
-      return
+    @_checkWindowState (openNewWindow) =>
+      return unless openNewWindow
+      atom.open pathsToOpen: [path.join(@path, OPEN_FILE_KEY)], newWindow: true
 
-    if @openNewWindow
-      atom.open pathsToOpen: [path.join(@path, 'codewars')], newWindow: true
-      @windowWasOpened = true
-      @openNewWindow = false
-      return
-
-    if @codewarsView.isVisible()
-      @codewarsView.hide()
+    if @codewarsView
+      if @codewarsView.isVisible() then @codewarsView.hide()
+      else @codewarsView.show()
     else
-      @codewarsView.show()
+      @_touchFocusState()
+
+  # == Private functions == #
+
+  _writeWindowState: (cb) ->
+    fs.writeFile @pathWindowState, atom.getCurrentWindow().id, cb
+
+  _checkWindowState: (callback) ->
+    fs.readFile @pathWindowState, (err, data) =>
+      if err or @firstWindowAtLaunch or not data?.toString()?.length
+        @firstWindowAtLaunch = false
+        @_clearWindowState -> callback true
+      else callback false
+
+  _clearWindowState: (callback) ->
+    fs.unlink @pathWindowState, callback
+
+  _touchFocusState: ->
+    fs.writeFile @pathFocusState
+
+  _watchStateFiles: ->
+    @_pathStatesWatcher = fs.watch @pathStatesDir
+    @_pathStatesWatcher.on 'change', (event, filename) =>
+      if filename is 'window'
+        fs.readFile @pathWindowState, (err, data) =>
+          if err or (parseInt data.toString()) isnt atom.getCurrentWindow().id
+            @_writeWindowState()
+      if filename is 'focus'
+        if not @codewarsView.isVisible() then @codewarsView.show()
+        atom.getCurrentWindow().focus()
