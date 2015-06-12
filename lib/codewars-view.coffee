@@ -11,7 +11,7 @@ class CodewarsView extends View
         @tag 'webview',
           class: 'dashboard-frame invisible',
           src: 'http://www.codewars.com/dashboard',
-          preload: 'file://' + require.resolve('./webview/server')
+          preload: 'file://' + require.resolve './webview/server'
 
   initialize: (@path, serializedState) ->
     @subscriptions = new CompositeDisposable
@@ -21,14 +21,14 @@ class CodewarsView extends View
       event.stopPropagation()
 
     atom.commands.add 'atom-workspace', 'core:cancel': onCancel
-    $(atom.views.getView(atom.workspace)).click(onCancel)
+    $(atom.views.getView atom.workspace).click onCancel
 
-    @panel ?= atom.workspace.addModalPanel(item: @)
-    @parent().addClass('codewars-panel')
+    @panel ?= atom.workspace.addModalPanel item: @
+    @parent().addClass 'codewars-panel'
     @hide()
 
-    @webview = @find('.dashboard-frame')
-    @controller = new CodewarsController(@webview)
+    @webview = @find '.dashboard-frame'
+    @controller = new CodewarsController @webview
 
     @_bindEventHandlers()
 
@@ -70,21 +70,21 @@ class CodewarsView extends View
 
   _onDidLoad: =>
     @_fadeOutWebView()
-    @controller.execute(-> console.log('test console output'))
+    @controller.execute -> console.log 'test console output'
 
   _onDidSolveChallenge: (id) =>
-    console.log('solved challenge', id)
-    @tearDownChallenge(id)
+    console.log 'solved challenge', id
+    @tearDownChallenge id
     @show()
 
   _onWillOpenChallenge: (id) =>
-    console.log('opening challenge', id)
+    console.log 'opening challenge', id
     @hide()
-    @setupChallenge(id)
+    @setupChallenge id
 
 
   # == Private functions == #
   _fadeOutWebView: ->
     @webview.hide()
-    @webview.removeClass('invisible')
-    @webview.fadeIn(400, => @removeClass('logo'))
+    @webview.removeClass 'invisible'
+    @webview.fadeIn 400, => @removeClass 'logo'
