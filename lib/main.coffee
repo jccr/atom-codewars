@@ -7,6 +7,7 @@ Q = require 'q'
 CodewarsView = require './codewars-view'
 
 module.exports = Codewars =
+  dataDir: 'codewars-workspace'
   codewarsView: null
   subscriptions: null
   openNewWindow: false
@@ -34,21 +35,25 @@ module.exports = Codewars =
     fs.unlink @windowLockPath, callback
 
   activate: (state) ->
-    @path = path.join atom.getConfigDirPath(), 'codewars-workspace'
+    @path = path.join atom.getConfigDirPath(), @dataDir
     @windowLockPath = path.join @path, 'window.lock'
+
     mkdirp @path, (err) =>
       throw err if err
       @checkWindowLock (activate) =>
         return unless activate
-        window.codewars = @
-        @codewarsView = new CodewarsView @path, state.codewarsViewState
-        @codewarsView.show()
+        @createView state
 
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
 
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'codewars:toggle': => @toggle()
+
+  createView: (state) ->
+    window.codewars = @
+    @codewarsView = new CodewarsView @path, state.codewarsViewState
+    @codewarsView.show()
 
   deactivate: ->
     @clearWindowLock()
