@@ -99,7 +99,7 @@ module.exports = Codewars =
       else callback false
 
   _clearWindowState: (callback) ->
-    fs.unlink @pathWindowState, callback
+    fs.unlink @pathWindowState, -> callback?()
 
   _touchFocusState: ->
     fs.writeFile @pathFocusState
