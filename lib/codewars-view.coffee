@@ -1,6 +1,5 @@
-
 {$, View} = require 'space-pen'
-{CompositeDisposable} = require 'event-kit'
+{CompositeDisposable} = require 'atom'
 CodewarsController = require './codewars-controller'
 
 module.exports =

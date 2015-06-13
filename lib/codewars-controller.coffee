@@ -1,4 +1,4 @@
-{CompositeDisposable} = require 'event-kit'
+{CompositeDisposable} = require 'atom'
 WebviewClient = require './webview/client'
 
 module.exports =

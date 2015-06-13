@@ -1,5 +1,5 @@
 DEBUG = true
-{Emitter} = require 'event-kit'
+{Emitter} = require 'atom'
 
 module.exports =
 class WebviewClient
