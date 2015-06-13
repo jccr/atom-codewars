@@ -32,6 +32,8 @@ class CodewarsView extends View
 
     @_bindEventHandlers()
 
+    @_setupWorkspace()
+
   # Returns an object that can be retrieved when package is activated
   serialize: ->
 
@@ -88,3 +90,7 @@ class CodewarsView extends View
     @webview.hide()
     @webview.removeClass 'invisible'
     @webview.fadeIn 400, => @removeClass 'logo'
+
+  _setupWorkspace: ->
+    # We don't need the tree view
+    atom.packages.getActivePackage('tree-view').deactivate()
