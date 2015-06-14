@@ -1,6 +1,7 @@
 {$, View} = require 'space-pen'
 {CompositeDisposable} = require 'atom'
 CodewarsController = require './codewars-controller'
+WorkspaceManager = require './workspace-manager'
 
 module.exports =
 class CodewarsView extends View
@@ -14,6 +15,8 @@ class CodewarsView extends View
 
   initialize: (@path, serializedState) ->
     @subscriptions = new CompositeDisposable
+    @workspaceManager = new WorkspaceManager
+    @workspaceManager.setupWorkspace()
 
     onCancel = (event) =>
       @hide()
@@ -31,7 +34,6 @@ class CodewarsView extends View
 
     @_bindEventHandlers()
 
-    @_setupWorkspace()
 
   # Returns an object that can be retrieved when package is activated
   serialize: ->
@@ -89,7 +91,3 @@ class CodewarsView extends View
     @webview.hide()
     @webview.removeClass 'invisible'
     @webview.fadeIn 400, => @removeClass 'logo'
-
-  _setupWorkspace: ->
-    # We don't need the tree view
-    atom.packages.getActivePackage('tree-view').deactivate()

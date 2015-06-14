@@ -1,10 +1,9 @@
 fs = require 'fs'
 path = require 'path'
 mkdirp = require 'mkdirp'
-Q = require 'q'
 
 {CompositeDisposable} = require 'atom'
-CodewarsView = require './codewars-view'
+CodewarsView = null
 
 DATA_DIR = 'codewars-workspace'
 OPEN_FILE_KEY = DATA_DIR + '-loading'
@@ -45,14 +44,10 @@ module.exports = Codewars =
     mkdirp @pathStatesDir, (err) =>
       throw err if err
       # Check if the window has the codewars initial file open
-      textEditorFile = atom.workspace.getActiveTextEditor()?.buffer.file?.path
-      if textEditorFile
-        checkIfCodewarsWindow textEditorFile
-      else
-        @_textEditorObserver =
-          atom.workspace.observeTextEditors (editor) =>
-            checkIfCodewarsWindow editor?.buffer.file?.path
-            @_textEditorObserver?.dispose()
+      disposable = new CompositeDisposable
+      disposable.add atom.workspace.observeTextEditors (editor) =>
+          checkIfCodewarsWindow editor?.getPath()
+          disposable.dispose()
 
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
@@ -61,6 +56,7 @@ module.exports = Codewars =
     @subscriptions.add atom.commands.add 'atom-workspace', 'codewars:toggle': => @toggle()
 
   createView: (state) ->
+    CodewarsView ?= require './codewars-view'
     @codewarsView = new CodewarsView @path, state.codewarsViewState
     @codewarsView.show()
     @_watchStateFiles()
