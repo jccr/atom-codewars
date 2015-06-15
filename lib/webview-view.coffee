@@ -14,8 +14,7 @@ class WebviewView extends View
           src: 'http://www.codewars.com/dashboard',
           preload: 'file://' + require.resolve './webview-ipc/server'
 
-  initialize: (@path, serializedState) ->
-    console.log 'initialize'
+  initialize: (@path, serializedState, @delegate) ->
     @subscriptions = new CompositeDisposable
 
     @parent().addClass 'codewars-panel'
@@ -28,21 +27,17 @@ class WebviewView extends View
     @_bindEventHandlers()
 
   serialize: ->
-    console.log 'wvv serialize'
 
   destroy: ->
-    console.log 'wvv destroying'
     @subscriptions.dispose()
     @model.destroy()
     @remove()
 
   detach: ->
-    console.log 'wvv detach'
     @attached = false
     @hide()
 
-  activate: ->
-    console.log 'wvv activate'
+  attach: ->
     @attached = true
     @show()
     @focus()
@@ -56,9 +51,12 @@ class WebviewView extends View
 
   tearDownChallenge: (id) ->
     @isPlayingChallenge = false
+    @delegate.activate()
 
   setupChallenge: (id) ->
+    @delegate.deactivate()
     @isPlayingChallenge = true
+    
 
 
   # == Event handlers == #
@@ -74,13 +72,11 @@ class WebviewView extends View
   _onDidSolveChallenge: (id) =>
     console.log 'solved challenge', id
     @tearDownChallenge id
-    @show()
+
 
   _onWillOpenChallenge: (id) =>
     console.log 'opening challenge', id
-    @hide()
     @setupChallenge id
-
 
   # == Private functions == #
   _fadeOutWebView: ->

@@ -10,7 +10,6 @@ class MainView
   pane: null
 
   constructor: (@path, serializedState) ->
-    console.log 'mv constructor'
     @subscriptions = new CompositeDisposable
     @workspaceManager = new WorkspaceManager
     @resizeDetector = new DetectElementResize
@@ -26,38 +25,54 @@ class MainView
     @item.activate = => @activate()
 
     @workspaceManager.setupWorkspace =>
-      @subview = new WebviewView @path, serializedState
+      delegate =
+        activate: =>
+          @workspaceManager.cleanWorkspace()
+          @activate()
+        deactivate: =>
+          @deactivate()
+          @workspaceManager.cleanWorkspace()
+
+      @subview = new WebviewView @path, serializedState, delegate
       @subview.hide()
 
       resizeHandler = _.debounce (=> @_cropSubView()), 150
       @resizeDetector.addResizeListener @item, resizeHandler
-      @pane = atom.workspace.getActivePane()
-
-      @subscriptions.add @pane.on
 
       @activate()
 
+      @subscriptions.add atom.workspace.onDidChangeActivePaneItem (item) =>
+        setImmediate =>
+          itemNotVisible = @item.clientWidth is 0 and @item.clientHeight is 0
+          if itemNotVisible then @detach()
+          else if item is @item then @attach()
+
   serialize: ->
-    console.log 'mv serialize'
 
   destroy: ->
-    console.log 'mv destroying'
     @subscriptions.dispose()
     @subview.destroy()
     @item.remove()
 
   detach: ->
-    console.log 'mv detach'
+    return if not @attached
     @attached = false
     @subview.detach()
 
-  activate: ->
-    console.log 'mv activate'
+  attach: ->
+    @_cropSubView()
+    @subview.attach()
     @attached = true
-    @pane.activateItem @item
-    setImmediate =>
-      @_cropSubView()
-      @subview.activate()
+
+  activate: ->
+    pane = atom.workspace.paneForItem(@item) or atom.workspace.getActivePane()
+    pane.activateItem @item
+    pane.activate()
+    setImmediate => @attach()
+
+  deactivate: ->
+    @detach()
+    atom.workspace.paneForItem(@item).destroyItem @item
 
   isAttached: -> @attached
 

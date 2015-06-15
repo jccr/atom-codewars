@@ -1,3 +1,4 @@
+_ = require 'lodash'
 {CompositeDisposable} = require 'atom'
 
 module.exports =
@@ -22,8 +23,18 @@ class WorkspaceManager
     atom.packages.activatePackage('background-tips').then (pack) =>
       view = pack.mainModule.backgroundTipsView
       proto = Object.getPrototypeOf view
-      tip = view.renderTip 'Toggle Codewars with {codewars:toggle}'
+      tip = view.renderTip 'Open Codewars with {codewars:toggle}'
       proto.showNextTip = ->
         @message.innerHTML = tip
         @message.classList.add('fade-in')
         setImmediate => clearInterval(@interval) if @interval?
+
+    # We depend on the markdown preview package
+    atom.packages.activatePackage('markdown-preview')
+
+    # The autosave package might cause problems..
+    atom.packages.deactivatePackage('autosave')
+
+  cleanWorkspace: (callback) ->
+    _.each atom.workspace.getPanes(), (pane) ->
+      pane.destroy()
