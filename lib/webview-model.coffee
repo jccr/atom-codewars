@@ -1,8 +1,8 @@
 {CompositeDisposable} = require 'atom'
-WebviewClient = require './webview/client'
+WebviewClient = require './webview-ipc/client'
 
 module.exports =
-class CodewarsController extends WebviewClient
+class WebviewModel extends WebviewClient
 
   constructor: (@webview) ->
     super @webview.get 0

@@ -5,7 +5,7 @@ class WorkspaceManager
 
   constructor: ->
 
-  setupWorkspace: ->
+  setupWorkspace: (callback) ->
     # We don't need the tree view
     atom.packages.getActivePackage('tree-view')?.deactivate()
 
@@ -15,6 +15,8 @@ class WorkspaceManager
       setImmediate ->
         editor.destroy()
         disposable.dispose()
+        setImmediate ->
+          callback()
 
     # Replace all background tips with our own
     atom.packages.activatePackage('background-tips').then (pack) =>

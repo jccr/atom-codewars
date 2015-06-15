@@ -1,60 +1,56 @@
 {$, View} = require 'space-pen'
 {CompositeDisposable} = require 'atom'
-CodewarsController = require './codewars-controller'
-WorkspaceManager = require './workspace-manager'
+WebviewModel = require './webview-model'
 
 module.exports =
-class CodewarsView extends View
+class WebviewView extends View
+  attached: false
+
   @content: ->
     @div class: 'codewars logo', =>
       @div class: 'message', =>
         @tag 'webview',
           class: 'dashboard-frame invisible',
           src: 'http://www.codewars.com/dashboard',
-          preload: 'file://' + require.resolve './webview/server'
+          preload: 'file://' + require.resolve './webview-ipc/server'
 
   initialize: (@path, serializedState) ->
+    console.log 'initialize'
     @subscriptions = new CompositeDisposable
-    @workspaceManager = new WorkspaceManager
-    @workspaceManager.setupWorkspace()
 
-    onCancel = (event) =>
-      @hide()
-      event.stopPropagation()
-
-    atom.commands.add 'atom-workspace', 'core:cancel': onCancel
-    $(atom.views.getView atom.workspace).click onCancel
-
-    @panel ?= atom.workspace.addModalPanel item: @
     @parent().addClass 'codewars-panel'
-    @hide()
-
     @webview = @find '.dashboard-frame'
-    @controller = new CodewarsController @webview
+
+    @model = new WebviewModel @webview
+
+    @appendTo atom.views.getView(atom.workspace)
 
     @_bindEventHandlers()
 
-
-  # Returns an object that can be retrieved when package is activated
   serialize: ->
+    console.log 'wvv serialize'
 
-
-  # Tear down any state and detach
   destroy: ->
+    console.log 'wvv destroying'
     @subscriptions.dispose()
-    @controller.destroy()
-    @panel.destroy()
+    @model.destroy()
     @remove()
 
-  show: ->
+  detach: ->
+    console.log 'wvv detach'
+    @attached = false
+    @hide()
+
+  activate: ->
+    console.log 'wvv activate'
+    @attached = true
+    @show()
     @focus()
-    @panel.show()
 
-  hide: ->
-    @panel.hide()
+  isAttached: -> @attached
 
-  isVisible: ->
-    @panel.isVisible()
+  crop: (rect) ->
+    @css rect
 
   isPlayingChallenge: false
 
@@ -67,13 +63,13 @@ class CodewarsView extends View
 
   # == Event handlers == #
   _bindEventHandlers: ->
-    @subscriptions.add @controller.onDidLoad @_onDidLoad
-    @subscriptions.add @controller.onWillOpenChallenge @_onWillOpenChallenge
-    @subscriptions.add @controller.onDidSolveChallenge @_onDidSolveChallenge
+    @subscriptions.add @model.onDidLoad @_onDidLoad
+    @subscriptions.add @model.onWillOpenChallenge @_onWillOpenChallenge
+    @subscriptions.add @model.onDidSolveChallenge @_onDidSolveChallenge
 
   _onDidLoad: =>
     @_fadeOutWebView()
-    @controller.execute -> console.log 'test console output'
+    @model.execute -> console.log 'test console output'
 
   _onDidSolveChallenge: (id) =>
     console.log 'solved challenge', id
