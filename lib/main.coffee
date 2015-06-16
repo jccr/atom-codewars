@@ -3,7 +3,7 @@ path = require 'path'
 mkdirp = require 'mkdirp'
 
 {CompositeDisposable} = require 'atom'
-MainView = null
+MainView = null # Defer until used
 
 DATA_DIR = 'codewars-workspace'
 OPEN_FILE_KEY = DATA_DIR + '-loading'
@@ -57,7 +57,7 @@ module.exports = Codewars =
       # Register command that toggles this view
       @subscriptions.add atom.commands.add 'atom-workspace', 'codewars:toggle': => @toggle()
 
-    setTimeout timeout, 3000
+    setTimeout timeout, 0
 
   createView: (state) ->
     MainView ?= require './main-view'

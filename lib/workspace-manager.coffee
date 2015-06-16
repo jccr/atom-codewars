@@ -17,6 +17,8 @@ class WorkspaceManager
         editor.destroy()
         disposable.dispose()
         setImmediate ->
+          # Close the open project
+          atom.project.destroy()
           callback()
 
     # Replace all background tips with our own
