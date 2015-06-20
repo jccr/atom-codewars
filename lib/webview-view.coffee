@@ -1,3 +1,4 @@
+_ = require 'lodash'
 {$, View} = require 'space-pen'
 {CompositeDisposable} = require 'atom'
 WebviewModel = require './webview-model'
@@ -56,13 +57,56 @@ class WebviewView extends View
   setupChallenge: (id) ->
     @delegate.deactivate()
     @isPlayingChallenge = true
-    
+    codeEditorUri = "codewars://#{id}/code"
+    fixtureEditorUri = "codewars://#{id}/fixture"
+    atom.workspace.open codeEditorUri
+    atom.workspace.open fixtureEditorUri, split: 'right'
+    @model.getChallengeInfo (err, challengeInfo) ->
+      if err then throw err
+      language = challengeInfo.activeLanguage
+      potentialGrammars = _.map atom.grammars.getGrammars(), (grammar) ->
+        score = 0
+        return unless grammar.packageName
+        grammarName = grammar.name.replace '#', 'sharp'
+        score++ if grammar.packageName.includes language
+        score++ if grammarName.toLowerCase().includes language
+        score++ if grammarName.toLowerCase() is language
+        score++ if grammar.scopeName.includes language
+        score++ if grammar.includedGrammarScopes.length is 0
+        return if score is 0
+        return {score, grammar}
+
+      selectedGrammar = (_.max potentialGrammars, 'score').grammar
+      _.each atom.workspace.getTextEditors(), (editor) =>
+        return unless editor.isFileless
+        if editor.getURI() is codeEditorUri or editor.getURI() is fixtureEditorUri
+          editor.setGrammar selectedGrammar
+        if editor.getURI() is codeEditorUri
+          editor.setTitle challengeInfo.challengeName
+        if editor.getURI() is fixtureEditorUri
+          editor.setTitle "Test Cases"
+
+  readyChallenge: (id) ->
+    codeEditorUri = "codewars://#{id}/code"
+    fixtureEditorUri = "codewars://#{id}/fixture"
+    _.each atom.workspace.getTextEditors(), (editor) =>
+      return unless editor.isFileless
+
+      switch editor.getURI()
+        when codeEditorUri then getterFn = @model.getCode
+        when fixtureEditorUri then getterFn = @model.getFixture
+
+      getterFn?.call @model, (err, text) ->
+        if err then throw err
+        editor.setText text
+        editor.save()
 
 
   # == Event handlers == #
   _bindEventHandlers: ->
     @subscriptions.add @model.onDidLoad @_onDidLoad
     @subscriptions.add @model.onWillOpenChallenge @_onWillOpenChallenge
+    @subscriptions.add @model.onDidOpenChallenge @_onDidOpenChallenge
     @subscriptions.add @model.onDidSolveChallenge @_onDidSolveChallenge
 
   _onDidLoad: =>
@@ -77,6 +121,10 @@ class WebviewView extends View
   _onWillOpenChallenge: (id) =>
     console.log 'opening challenge', id
     @setupChallenge id
+
+  _onDidOpenChallenge: (id) =>
+    console.log 'ready challenge', id
+    @readyChallenge id
 
   # == Private functions == #
   _fadeOutWebView: ->

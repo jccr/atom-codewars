@@ -52,10 +52,10 @@ class WebviewModel extends WebviewClient
   setCode: (code, callback) ->
     @execute (-> App.controller.editor?.editor.setValue($0)), callback, code
 
-  getTest: (callback) ->
+  getFixture: (callback) ->
     @execute (-> App.controller.fixture?.editor.getValue()), callback
 
-  setTest: (code, callback) ->
+  setFixture: (code, callback) ->
     @execute (-> App.controller.fixture?.editor.setValue($0)), callback, code
 
   # == Event handlers == #

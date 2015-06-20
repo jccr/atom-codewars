@@ -1,5 +1,7 @@
 _ = require 'lodash'
 {CompositeDisposable} = require 'atom'
+FilelessEditor = require './fileless-editor'
+FilelessBuffer = require './fileless-buffer'
 
 module.exports =
 class WorkspaceManager
@@ -36,6 +38,24 @@ class WorkspaceManager
 
     # The autosave package might cause problems..
     atom.packages.deactivatePackage('autosave')
+
+    @_registerOpener()
+
+
+  _registerOpener: ->
+    url = require 'url'
+    atom.workspace.addOpener (uriToOpen) ->
+      try
+        {protocol, host, pathname} = url.parse(uriToOpen)
+      catch error
+        return
+
+      return unless protocol is 'codewars:'
+
+      buffer = new FilelessBuffer filePath: uriToOpen
+      return new FilelessEditor buffer: buffer
+
+
 
   cleanWorkspace: (callback) ->
     _.each atom.workspace.getPanes(), (pane) ->
