@@ -1,10 +1,30 @@
 _ = require 'lodash'
+path = require 'path'
 {CompositeDisposable} = require 'atom'
 FilelessEditor = require './fileless-editor'
 FilelessBuffer = require './fileless-buffer'
 
+MarkdownPreviewView = null
+requireMarkdownPreviewView = _.once ->
+  markdownPreviewPackage = atom.packages.getActivePackage 'markdown-preview'
+  mainModuleDir = path.dirname markdownPreviewPackage.mainModulePath
+  markdownViewPath = path.join mainModuleDir, 'markdown-preview-view'
+  MarkdownPreviewView = require markdownViewPath
+
 module.exports =
 class WorkspaceManager
+
+  @createFilelessEditor: (uriToOpen) ->
+    buffer = new FilelessBuffer filePath: uriToOpen
+    return new FilelessEditor buffer: buffer
+
+  @createMarkdownView: (uri, markdownText) ->
+    filelessEditor = WorkspaceManager.createFilelessEditor uri
+    filelessEditor.setText markdownText
+    requireMarkdownPreviewView()
+    markdownPreviewView = new MarkdownPreviewView editorId: true
+    markdownPreviewView.editorForId = -> filelessEditor
+    return markdownPreviewView
 
   constructor: ->
 
@@ -51,11 +71,7 @@ class WorkspaceManager
         return
 
       return unless protocol is 'codewars:'
-
-      buffer = new FilelessBuffer filePath: uriToOpen
-      return new FilelessEditor buffer: buffer
-
-
+      WorkspaceManager.createFilelessEditor uriToOpen
 
   cleanWorkspace: (callback) ->
     _.each atom.workspace.getPanes(), (pane) ->

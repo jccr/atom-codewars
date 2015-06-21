@@ -2,6 +2,7 @@ _ = require 'lodash'
 {$, View} = require 'space-pen'
 {CompositeDisposable} = require 'atom'
 WebviewModel = require './webview-model'
+WorkspaceManager = require './workspace-manager'
 
 module.exports =
 class WebviewView extends View
@@ -57,9 +58,16 @@ class WebviewView extends View
   setupChallenge: (id) ->
     @delegate.deactivate()
     @isPlayingChallenge = true
+
     editorURIs = @_getURIsForId id
     atom.workspace.open editorURIs.code
     atom.workspace.open editorURIs.fixture, split: 'right'
+    @model.getInstructions (err, markdown) =>
+      @_instructionsPaneItem =
+        WorkspaceManager.createMarkdownView editorURIs.instructions, markdown
+      fixturePane = atom.workspace.paneForURI(editorURIs.fixture)
+      fixturePane?.splitUp items: [@_instructionsPaneItem]
+
     @model.getChallengeInfo (err, challengeInfo) =>
       if err then throw err
       grammar = @_findGrammarForLanguage challengeInfo.activeLanguage
@@ -70,6 +78,7 @@ class WebviewView extends View
         if isCodeEditor or isFixtureEditor then editor.setGrammar grammar
         if isCodeEditor then editor.setTitle challengeInfo.challengeName
         if isFixtureEditor then editor.setTitle "Test Cases"
+
 
   readyChallenge: (id) ->
     editorURIs = @_getURIsForId id
@@ -101,7 +110,6 @@ class WebviewView extends View
     console.log 'solved challenge', id
     @tearDownChallenge id
 
-
   _onWillOpenChallenge: (id) =>
     console.log 'opening challenge', id
     @setupChallenge id
@@ -119,6 +127,7 @@ class WebviewView extends View
   _getURIsForId: (id) ->
     code: "codewars://#{id}/code"
     fixture: "codewars://#{id}/fixture"
+    instructions: "codewars://#{id}/instructions"
 
   languageExtensions =
     javascript: 'js'
@@ -129,7 +138,7 @@ class WebviewView extends View
     csharp: 'cs'
     haskell: 'hs'
     java: 'java'
-    
+
   _findGrammarForLanguage: (language) ->
     extension = languageExtensions[language]
     return atom.grammars.selectGrammar "file.#{extension}" if extension
