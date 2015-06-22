@@ -58,36 +58,28 @@ class WebviewView extends View
   setupChallenge: (id) ->
     @delegate.deactivate()
     @isPlayingChallenge = true
-
-    editorURIs = @_getURIsForId id
-    atom.workspace.open editorURIs.code
-    atom.workspace.open editorURIs.fixture, split: 'right'
-    @model.getInstructions (err, markdown) =>
-      @_instructionsPaneItem =
-        WorkspaceManager.createMarkdownView editorURIs.instructions, markdown
-      fixturePane = atom.workspace.paneForURI(editorURIs.fixture)
-      fixturePane?.splitUp items: [@_instructionsPaneItem]
-
     @model.getChallengeInfo (err, challengeInfo) =>
       if err then throw err
-      grammar = @_findGrammarForLanguage challengeInfo.activeLanguage
-      _.each atom.workspace.getTextEditors(), (editor) ->
-        return unless editor.isFileless
-        isCodeEditor = editor.getURI() is editorURIs.code
-        isFixtureEditor = editor.getURI() is editorURIs.fixture
-        if isCodeEditor or isFixtureEditor then editor.setGrammar grammar
-        if isCodeEditor then editor.setTitle challengeInfo.challengeName
-        if isFixtureEditor then editor.setTitle "Test Cases"
+
+      @challengeURIs = @_getURIsForId id, challengeInfo
+      atom.workspace.open @challengeURIs.code
+      atom.workspace.open @challengeURIs.fixture, split: 'right'
+
+      @model.getInstructions (err, text) =>
+        @_instructionsPaneItem =
+          WorkspaceManager.createMarkdownView @challengeURIs.instructions, text
+        fixturePane = atom.workspace.paneForURI(@challengeURIs.fixture)
+        fixturePane?.splitUp items: [@_instructionsPaneItem]
 
 
   readyChallenge: (id) ->
-    editorURIs = @_getURIsForId id
+    return unless @isPlayingChallenge
     _.each atom.workspace.getTextEditors(), (editor) =>
       return unless editor.isFileless
 
       switch editor.getURI()
-        when editorURIs.code then getterFn = @model.getCode
-        when editorURIs.fixture then getterFn = @model.getFixture
+        when @challengeURIs.code then getterFn = @model.getCode
+        when @challengeURIs.fixture then getterFn = @model.getFixture
 
       getterFn?.call @model, (err, text) ->
         if err then throw err
@@ -124,10 +116,13 @@ class WebviewView extends View
     @webview.removeClass 'invisible'
     @webview.fadeIn 400, => @removeClass 'logo'
 
-  _getURIsForId: (id) ->
-    code: "codewars://#{id}/code"
-    fixture: "codewars://#{id}/fixture"
-    instructions: "codewars://#{id}/instructions"
+  _getURIsForId: (id, challengeInfo) ->
+    language = challengeInfo.activeLanguage
+    extension = @_findExtensionForLanguage language
+    challengeName = challengeInfo.challengeName
+    code: "codewars://#{id}/code/#{challengeName}.#{extension}"
+    fixture: "codewars://#{id}/fixture/Test Cases.#{extension}"
+    instructions: "codewars://#{id}/instructions/Instructions"
 
   languageExtensions =
     javascript: 'js'
@@ -139,21 +134,5 @@ class WebviewView extends View
     haskell: 'hs'
     java: 'java'
 
-  _findGrammarForLanguage: (language) ->
-    extension = languageExtensions[language]
-    return atom.grammars.selectGrammar "file.#{extension}" if extension
-
-    # If not found with the language to extension map then try a heuristic
-    potentialGrammars = _.map atom.grammars.getGrammars(), (grammar) ->
-      score = 0
-      return unless grammar.packageName
-      grammarName = grammar.name.replace '#', 'sharp'
-      score++ if grammar.packageName.includes language
-      score++ if grammarName.toLowerCase().includes language
-      score++ if grammarName.toLowerCase() is language
-      score++ if grammar.scopeName.includes language
-      score++ if grammar.includedGrammarScopes.length is 0 and score > 0
-      return if score is 0
-      return {score, grammar}
-
-    return (_.max potentialGrammars, 'score').grammar
+  _findExtensionForLanguage: (language) ->
+    languageExtensions[language]

@@ -6,9 +6,8 @@ FilelessBuffer = require './fileless-buffer'
 
 MarkdownPreviewView = null
 requireMarkdownPreviewView = _.once ->
-  markdownPreviewPackage = atom.packages.getActivePackage 'markdown-preview'
-  mainModuleDir = path.dirname markdownPreviewPackage.mainModulePath
-  markdownViewPath = path.join mainModuleDir, 'markdown-preview-view'
+  markdownViewModuleDir = path.dirname(require.resolve 'markdown-preview')
+  markdownViewPath = path.join markdownViewModuleDir, 'markdown-preview-view'
   MarkdownPreviewView = require markdownViewPath
 
 module.exports =
@@ -24,6 +23,12 @@ class WorkspaceManager
     requireMarkdownPreviewView()
     markdownPreviewView = new MarkdownPreviewView editorId: true
     markdownPreviewView.editorForId = -> filelessEditor
+    getTitle = _.bind markdownPreviewView.getTitle, markdownPreviewView
+    markdownPreviewView.getTitle = ->
+      title = getTitle()
+      # Drop preview suffix
+      return title.replace ' Preview', ''
+
     return markdownPreviewView
 
   constructor: ->
