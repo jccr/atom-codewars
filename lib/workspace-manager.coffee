@@ -1,14 +1,9 @@
 _ = require 'lodash'
 path = require 'path'
 {CompositeDisposable} = require 'atom'
-FilelessEditor = require './fileless-editor'
-FilelessBuffer = require './fileless-buffer'
-
-MarkdownPreviewView = null
-requireMarkdownPreviewView = _.once ->
-  markdownViewModuleDir = path.dirname(require.resolve 'markdown-preview')
-  markdownViewPath = path.join markdownViewModuleDir, 'markdown-preview-view'
-  MarkdownPreviewView = require markdownViewPath
+FilelessEditor = require './extended-classes/fileless-editor'
+FilelessBuffer = require './extended-classes/fileless-buffer'
+MarkdownView = require './extended-classes/markdown-view'
 
 module.exports =
 class WorkspaceManager
@@ -20,16 +15,7 @@ class WorkspaceManager
   @createMarkdownView: (uri, markdownText) ->
     filelessEditor = WorkspaceManager.createFilelessEditor uri
     filelessEditor.setText markdownText
-    requireMarkdownPreviewView()
-    markdownPreviewView = new MarkdownPreviewView editorId: true
-    markdownPreviewView.editorForId = -> filelessEditor
-    getTitle = _.bind markdownPreviewView.getTitle, markdownPreviewView
-    markdownPreviewView.getTitle = ->
-      title = getTitle()
-      # Drop preview suffix
-      return title.replace ' Preview', ''
-
-    return markdownPreviewView
+    return new MarkdownView filelessEditor
 
   constructor: ->
 
