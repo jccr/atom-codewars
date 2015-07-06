@@ -24,7 +24,9 @@ class WebviewView extends View
 
     @model = new WebviewModel @webview
 
-    @appendTo atom.views.getView(atom.workspace)
+    # use `html` element to evade key bindings that might affect the webview
+    # for example: to get around body#core:backspace
+    @appendTo document.documentElement
 
     @_bindEventHandlers()
 
