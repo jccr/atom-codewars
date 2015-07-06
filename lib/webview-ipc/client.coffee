@@ -41,7 +41,7 @@ class WebviewClient
         # invoke callback
         callback.cb? error, channel.data?.result
 
-  _encodeObject: (obj) =>
+  _encodeObject: (obj) ->
     return JSON.stringify obj
 
   execute: (fn, cb, args...) =>

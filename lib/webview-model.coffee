@@ -120,7 +120,7 @@ class WebviewModel extends WebviewClient
 
   $detectDidGetOutput = ->
     outputPanel = App.controller.outputPanel
-    _setOutput = outputPanel.setOutput;
+    _setOutput = outputPanel.setOutput
     outputPanel.setOutput = ->
       @emitter.emit 'did-get-output', arguments
       _setOutput.apply outputPanel, arguments

@@ -18,7 +18,15 @@ class FilelessEditor extends TextEditor
   copy: ->
     displayBuffer = @displayBuffer.copy()
     softTabs = @getSoftTabs()
-    newEditor = new FilelessEditor({@buffer, displayBuffer, @tabLength, softTabs, suppressCursorCreation: true, registerEditor: true})
+    newEditor = new FilelessEditor({
+      @buffer,
+      displayBuffer,
+      @tabLength,
+      softTabs,
+      suppressCursorCreation: true,
+      registerEditor: true
+    })
+    
     for marker in @findMarkers(editorId: @id)
-      marker.copy(editorId: newEditor.id, preserveFolds: true)
+      marker.copy editorId: newEditor.id, preserveFolds: true
     newEditor

@@ -28,7 +28,7 @@ class WorkspaceManager
 
     # Let's close the item that's going to open
     disposable = new CompositeDisposable
-    disposable.add atom.workspace.observeTextEditors (editor) =>
+    disposable.add atom.workspace.observeTextEditors (editor) ->
       setImmediate ->
         editor.destroy()
         disposable.dispose()
@@ -38,7 +38,7 @@ class WorkspaceManager
           callback()
 
     # Replace all background tips with our own
-    atom.packages.activatePackage('background-tips').then (pack) =>
+    atom.packages.activatePackage('background-tips').then (pack) ->
       view = pack.mainModule.backgroundTipsView
       proto = Object.getPrototypeOf view
       tip = view.renderTip 'Open Codewars with {codewars:toggle}'
