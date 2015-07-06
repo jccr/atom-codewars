@@ -6,9 +6,15 @@
 
 @assets: 'atom://atom-codewars/assets';
 
-.markdown-preview {
-  overflow: auto !important;
-  border-bottom: 1px solid transparent;
+atom-workspace.codewars-active {
+  .markdown-preview {
+    overflow: auto !important;
+    border-bottom: 1px solid transparent;
+  }
+
+  status-bar .file-info {
+    display: none;
+  }
 }
 
 .codewars {

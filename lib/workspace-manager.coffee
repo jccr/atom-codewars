@@ -20,6 +20,9 @@ class WorkspaceManager
   constructor: ->
 
   setupWorkspace: (callback) ->
+    # Activate custom workspace styling
+    atom.views.getView(atom.workspace).classList.add 'codewars-active'
+    
     # We don't need the tree view
     atom.packages.getActivePackage('tree-view')?.deactivate()
 
